@@ -1,0 +1,16 @@
+version: '2'
+services:
+  cache-service:
+    image: cache-service:0.0.1
+    network_mode: "bridge"
+    ports:
+      - "4930:4930"
+    command: /bin/cache-service
+    volumes:
+      - ./data:/data
+      - ./configs:/configs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
