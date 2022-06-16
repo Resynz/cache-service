@@ -10,7 +10,7 @@ import (
 )
 
 func RegisterApiRoute(route *gin.RouterGroup) {
-	route.GET("/ping",controller.Ping)
-
+	route.GET("/ping", controller.Ping)
+	RegisterCacheRoute(route.Group("/cache"))
 	RegisterCfnRoute(route.Group("/cfn"))
 }

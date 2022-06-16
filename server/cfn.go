@@ -10,5 +10,7 @@ import (
 )
 
 func RegisterCfnRoute(route *gin.RouterGroup) {
-	route.POST("/",cfn.Add)
+	route.GET("/:name", cfn.Get)
+	route.POST("/", cfn.Add)
+	route.DELETE("/:name", cfn.Delete)
 }

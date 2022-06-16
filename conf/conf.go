@@ -5,61 +5,67 @@
 package conf
 
 import (
-	"cache-service/lib/fn"
-	"cache-service/lib/redis"
+	"cache-service/structs"
 	"encoding/json"
 	"os"
 	"sync"
-	"time"
 )
 
 var (
-	Conf Config
+	Conf    Config
 	CfnMaps *CfnMap
 )
 
-func InitConf () error {
-	c,err:=os.ReadFile("./configs/config.json")
-	if err!=nil{
+const DataPath = "./data/cfn.json"
+const ConfigPath = "./configs/config.json"
+
+func InitConf() error {
+	c, err := os.ReadFile(ConfigPath)
+	if err != nil {
 		return err
 	}
-	if err = json.Unmarshal(c,&Conf);err!=nil{
+	if err = json.Unmarshal(c, &Conf); err != nil {
 		return err
 	}
 	CfnMaps = &CfnMap{
 		Mutex: &sync.Mutex{},
-		maps:  make(map[string]*Cfn),
+		maps:  make(map[string]*structs.Cfn),
 	}
 	return nil
 }
 
 func InitCnfMaps() error {
-	c,err:=os.ReadFile("./data/cfn.json")
-	if err!=nil{
+	c, err := os.ReadFile(DataPath)
+	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
 		return err
 	}
-	var maps map[string]*Cfn
-	if err = json.Unmarshal(c,&maps);err!=nil{
+	var maps []*structs.Cfn
+	if err = json.Unmarshal(c, &maps); err != nil {
 		return err
 	}
 
-	for k,v:=range maps {
-		value,err:=fn.CallFn(v.Fn)
-		if err!=nil{
-			return err
-		}
-
-		if err = redis.RedisClient.Set(v.Name,value,time.Second * time.Duration(v.Expire)).Err();err!=nil{
-			return err
-		}
-		CfnMaps.Set(k,v)
+	for _, v := range maps {
+		CfnMaps.Set(v.Name, v)
 	}
 	return nil
 }
 
 func StoreCfnMaps() error {
-
+	mps := make([]*structs.Cfn, 0)
+	for _, v := range CfnMaps.maps {
+		mps = append(mps, v)
+	}
+	f, err := os.OpenFile(DataPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	ec := json.NewEncoder(f)
+	if err = ec.Encode(&mps); err != nil {
+		return err
+	}
+	return nil
 }
